@@ -611,6 +611,20 @@
                         <button id="btnClozeSelectAll" class="btn btn-sm btn-outline-primary">Select all</button>
                         <button id="btnClozeClear"     class="btn btn-sm btn-outline-secondary">Clean</button>
                         <button id="btnClozeAutofill"  class="btn btn-sm btn-outline-success">Auto-fill answers</button>
+                        <!-- Global AI guard (applies to the whole export, not per-row) -->
+                        <div class="form-check form-switch ms-auto" style="margin-bottom:0;">
+                        <input class="form-check-input" type="checkbox" role="switch" id="clozeAiToggle">
+                        <label class="form-check-label" for="clozeAiToggle" style="user-select:none;">
+                            AI guard
+                            <span class="ms-1 text-muted"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Selecting this option adds a hidden message to the exported file intended to confuse AI systems and disables screenshots, making it more difficult for AI-assisted web browsers to solve the questionnaire."
+                                style="cursor: help;">
+                            <i class="bi bi-question-circle"></i>
+                            </span>
+                        </label>
+                        </div>
                     </div>
                     
                     <div style="display:grid;grid-template-columns:1fr 200px;gap:16px;">
@@ -631,16 +645,6 @@
                                                     data-bs-toggle="tooltip"
                                                     data-bs-placement="top"
                                                     title="These hints are ONLY used in the XML export (Moodle general feedback). HTML export ignores them."
-                                                    style="cursor: help;">
-                                                <i class="bi bi-question-circle"></i>
-                                            </span>
-                                        </th>
-                                        <th>
-                                            AI 
-                                            <span class="ms-1 text-muted"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-placement="top"
-                                                    title="Selecting this option adds a hidden message to the exported file intended to confuse AI systems and disables screenshots, making it more difficult for AI-assisted web browsers to solve the questionnaire."
                                                     style="cursor: help;">
                                                 <i class="bi bi-question-circle"></i>
                                             </span>
