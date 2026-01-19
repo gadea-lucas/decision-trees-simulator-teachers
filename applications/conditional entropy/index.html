@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="../lib/jquery-3.7.1.min.js"></script>
+    <script type="module" src="../lib/input-check.js"></script>
+    <script type="module" src="../lib/entropy-calculator.js"></script>
+    <script type="module" src="js/catNumHandler.js"></script>
+    <script type="module" src="js/calculator.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conditional Entropy calculator</title>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="py-3 mb-4 border-bottom bg-body-secondary bg-opacity-75 ">
+        <div class="container d-flex flex-wrap align-items-center justify-content-center ">
+            <a href="https://www.ubu.es" class="d-flex align-items-center me-2 ">
+                <img src="../img/ubulogocolorfull.png" width="100" height="50">
+            </a>
+            <a href="../../index.html" class="fw-bold fs-5 ms-2 me-2 nav-link link-dark link-opacity-50-hover">Decision
+                Tree Simulator</a>
+            <ul class="nav me-auto mx-auto">
+                <li class="nav-item">
+                    <a href="../entropy/" class="nav-link link-dark px-2 link-opacity-50-hover ">Entropy</a>
+                </li>
+                <li class="nav-item">
+                    <a href="../conditional entropy/" class="nav-link link-dark px-2 opacity-50 ">Conditional
+                        Entropy</a>
+                </li>
+                <li class="nav-item">
+                    <a href="../decision tree/" class="nav-link link-dark px-2 link-opacity-50-hover ">Decision Tree
+                        ID3</a>
+                </li>
+            </ul>
+        </div>
+    </header>
+    <div class="container pb-2">
+        <!-- Info card -->
+        <div class="row-auto p-2 pb-4">
+            <div class="accordion" id="accordionInfo">
+                <div class="card bg-light mx-auto ">
+                    <!-- General Info -->
+                    <div class="card-header fs-6" id="generalInfo">
+                        <a class="collapsed d-block link-body-emphasis link-offset-2 link-offset-2-hover link-underline link-underline-opacity-0 link-underline-opacity-50-hover"
+                            data-bs-toggle="collapse" href="#generalInfoCondEntropy" aria-expanded="false"
+                            aria-controls="generalInfoCondEntropy">
+                            General Information
+                        </a>
+                    </div>
+                    <div class="collapse" id="generalInfoCondEntropy" aria-labelledby="generalInfo"
+                        data-parent="#accordionInfo">
+                        <div class="card-body ">
+                            <p class="card-text fw-light">
+                                Conditional entropy is a measure of the amount of impurity, uncertainty or randomness
+                                remaining in a random variable given that another random variable is known.
+                            <p class="card-text fw-light">
+                                In the context of classification problems, conditional entropy quantifies the
+                                uncertainty of a target variable \( Y \), which describes the set of class labels, given
+                                a category/value \( x \) of the attribute \( X \).
+                            <ul class="card-text fw-light">
+                                <li>
+                                    Note: The term "category" (of an attribute) usually refers to categorical or
+                                    nominal values, while "value" (of an attribute) usually refers to numerical values.
+                                    This application only uses categorical values in practice but will use both terms
+                                    for theoretical information.
+                                </li>
+                            </ul>
+                            </p>
+                            <a href="https://en.wikipedia.org/wiki/Conditional_entropy"
+                                class="btn btn-outline-dark ">Learn more</a>
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Calculation -->
+                    <div class="card-header fs-6" id="calculation">
+                        <a class="collapsed d-block link-body-emphasis link-offset-2 link-offset-2-hover link-underline link-underline-opacity-0 link-underline-opacity-50-hover"
+                            data-bs-toggle="collapse" href="#calcInfoCondEntropy" aria-expanded="false"
+                            aria-controls="calcInfoCondEntropy">
+                            Calculation
+                        </a>
+                    </div>
+                    <div class="collapse" id="calcInfoCondEntropy" aria-labelledby="calculation"
+                        data-parent="#accordionInfo">
+                        <div class="card-body ">
+                            <p class="card-text fw-light">
+                            <p class="card-text fw-light">
+                                For a binary classification problem, conditional entropy \( H(Y \mid X) \) is calculated
+                                using the following formula:
+                            </p>
+                            <p class="card-text fw-light">
+                                \[ H(Y \mid X) = \sum_{x \in X} p(x) H(Y \mid X = x) \]
+                            </p>
+                            <p class="card-text fw-light">
+                                Where:
+                            </p>
+                            <ul class="card-text fw-light">
+                                <li>\( X \) is the set of categories/values of the first attribute</li>
+                                <li>\( Y \) is the set of categories/values of the class attribute</li>
+                                <li>\( p(x) \) is the proportion between the number of instances with the category/value
+                                    \( x \)
+                                    and the size of the dataset</li>
+                            </ul>
+                            <p class="card-text fw-light">
+                                Calculating the conditional entropies for the individual categories/values \( x \) of
+                                attribute \(
+                                X \) (depicted as \( H(Category) \) in the calculator below) is possible with the
+                                following formula:
+                            </p>
+                            <p class="card-text fw-light">
+                                \[ H(Y \mid X = x) = - \sum_{y \in Y} p(y \mid x)\log_2(p(y \mid x)) \]
+                            </p>
+                            <p class="card-text fw-light">
+                                Where:
+                            </p>
+                            <ul class="card-text fw-light">
+                                <li>\( p(y \mid x) \) is the proportion of instances in the dataset with attribute
+                                    category/value \( x \) that also have the class label \( y \)</li>
+                            </ul>
+                            <p class="card-text fw-light">
+                                It sums over all the possible categories/values of the class attribute \( Y \).
+                            </p>
+                            <br>
+                            <p class="card-text fw-light">
+                            <b>For example</b>, consider the class (\(Y\)) sample space: \(\text{Play golf} = \{\text{yes}, \text{no}\}\), and the attribute (\(X\)) sample space: \(\text{Outlook} = \{\text{Sunny}, \text{Rainy}\}\). The conditional entropy is expressed as:
+                            </p>
+                            <p class="card-text fw-light">
+                                \[ H(\text{Play golf} \mid \text{Outlook}) = \sum_{x \in \text{Outlook}} p(x) H(\text{Play golf} \mid \text{Outlook} = x) \]
+                            </p>
+                            <p class="card-text fw-light">
+                                Specifically, for the category "Sunny," we can calculate:
+                            </p>
+                            <p class="card-text fw-light">
+                                \[ H(\text{Play golf} \mid \text{Outlook} = \text{Sunny}) = - \sum_{y \in \text{Play golf}} p(y \mid \text{Sunny}) \log_2(p(y \mid \text{Sunny})) \] 
+                            </p>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row ">
+            <p class="fs-2 text-center">Conditional Entropy calculator</p>
+            <!-- Alert sum 0 -->
+            <div class="row-auto">
+                <div class="col-auto text-center">
+                    <div class="alert alert-danger alert-dismissible d-none" id="alert-sum-0">
+                        <button type="button" class="btn-close"
+                            onclick="$('#alert-sum-0').addClass('d-none');"></button>
+                        All instance values are 0. Please introduce at least one instance with a positive integer value.
+                    </div>
+                </div>
+            </div>
+            <!-- Alert invalid value -->
+            <div class="row-auto">
+                <div class="col-auto text-center">
+                    <div class="alert alert-danger alert-dismissible d-none" id="alert-invalid-val">
+                        <button type="button" class="btn-close"
+                            onclick="$('#alert-invalid-val').addClass('d-none');"></button>
+                        At least one value is invalid. Please only use positive integers as input values.
+                    </div>
+                </div>
+            </div>
+            <!-- Alert no input -->
+            <div class="row-auto">
+                <div class="col-auto text-center">
+                    <div class="alert alert-danger alert-dismissible d-none" id="alert-empty-input">
+                        <button type="button" class="btn-close"
+                            onclick="$('#alert-empty-input').addClass('d-none');"></button>
+                        At least one input field is empty. Please add positive integer values to each input field.
+                    </div>
+                </div>
+            </div>
+            <!-- Conditional Entropy table -->
+            <div class="row-auto">
+                <div class="col-auto d-flex justify-content-center ">
+                    <div class="table-wrapper">
+                        <table class="table caption-top" id="table-cond-entropy">
+                            <caption>Example attribute (\(Y\))</caption>
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th>Class 1</th>
+                                    <th>Class 2</th>
+                                    <th>Ratio</th>
+                                    <th>\(H(Y \mid X=x)\)</th>
+                                    <th>\(H(Y \mid X)\)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="ceCell" rowspan="3" style="vertical-align: middle;"><label
+                                            class="form-control-plaintext text-center fw-semibold  ">\(X\)</label></td>
+                                    <td id="c1" class="text-center "><label class="form-control-plaintext ">Category
+                                            1:</label></td>
+                                    <td><input value=1 type=text class="form-control" /></td>
+                                    <td><input value=5 type=text class="form-control" /></td>
+                                    <td><label class="form-control-plaintext ">0.40</label></td>
+                                    <td><label class="form-control-plaintext ">0.65</label></td>
+                                    <td id="ceContainer" rowspan="3" style="vertical-align: middle;"><label id="ce"
+                                            class="form-control-plaintext text-center fw-semibold  ">0.56</label></td>
+                                </tr>
+                                <tr>
+                                    <td id="c2" class="text-center "><label class="form-control-plaintext ">Category
+                                            2:</label></td>
+                                    <td><input value=1 type=text class="form-control" /></td>
+                                    <td><input value=8 type=text class="form-control" /></td>
+                                    <td><label class="form-control-plaintext ">0.60</label></td>
+                                    <td><label class="form-control-plaintext ">0.50</label></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr style="border-bottom: hidden;">
+                                    <td class="text-center ">
+                                        <div id="btnAddCategory" class="btn btn-outline-primary ">+</div>
+                                        <script type="module">
+                                            import { addCategory } from './js/catNumHandler.js';
+
+                                            document.querySelector('#btnAddCategory').addEventListener('click', addCategory);
+                                        </script>
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- "Calculate Conditional Entropy" button -->
+            <div class="row-auto pt-2 pb-3 ">
+                <div class="col-auto text-center ">
+                    <div id="btnCalculateCondEntropy" class="btn btn-primary ">Calculate Conditional
+                        Entropy
+                    </div>
+                    <script type="module">
+                        import { calcCondEntropy } from './js/calculator.js';
+
+                        document.querySelector('#btnCalculateCondEntropy').addEventListener('click', calcCondEntropy);
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer -->
+    <footer class="py-3 mt-2 border-top bg-body-tertiary ">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center">
+            <div class="col-md-8 col-auto d-flex align-items-center">
+                <ul class="flex-column">
+                    <span class="fw-bold ">Authors:</span>
+                    <li class="mb-2 mt-2" style="list-style-type: none;">
+                        <span>Daniel Drefs Fernandes</span>
+                    </li>
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span>Carlos López Nozal</span>
+                    </li>
+                    
+                </ul>
+                <ul class="flex-column">
+                    <span class="fw-bold "></span>
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span>Ismael Ramos Pérez</span>
+                    </li>
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span>Pedro Latorre Carmona</span>
+                    </li>
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span>Gadea Lucas Pérez</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-3 col-auto d-flex align-items-center">
+                <span class="date fw-light"></span>
+                <script>
+                    // Get the date of when the repository was last updated and write it into the corresponding footer span
+                    const desiredRepo = "gadea-lucas.github.io"; // gadea-lucas
+                    const dateTagClass = ".date";
+
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.onreadystatechange = function () {
+                        if (this.readyState == 4 && this.status == 200) {
+                            let repos = JSON.parse(this.responseText);
+
+                            repos.forEach((repo) => {
+                                if (repo.name == desiredRepo) {
+                                    let lastUpdated = new Date(repo.updated_at);
+                                    let day = lastUpdated.getUTCDate();
+                                    let month = lastUpdated.getUTCMonth() + 1;
+                                    let year = lastUpdated.getUTCFullYear();
+                                    $(dateTagClass).text(`Last updated: ${day}-${month}-${year}`);
+                                }
+                            });
+                        }
+                    };
+                    xhttp.open("GET", "https://api.github.com/users/gadea-lucas/repos", true);
+                    xhttp.send();
+                </script>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
