@@ -11,6 +11,7 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
     <script src="./applications/lib/jquery-3.7.1.min.js"></script>
+    <script type="module"src="applications/js/footer.js" defer></script>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -127,31 +128,14 @@
                 </ul>
             </div>
             <div class="col-md-3 col-auto d-flex align-items-center">
-                <span class="date fw-light"></span>
-                <script>
-                    // Get the date of when the repository was last updated and write it into the corresponding footer span
-                    const desiredRepo = "decision-trees-simulator-teachers";
-                    const dateTagClass = ".date";
-
-                    var xhttp = new XMLHttpRequest();
-                    xhttp.onreadystatechange = function () {
-                        if (this.readyState == 4 && this.status == 200) {
-                            let repos = JSON.parse(this.responseText);
-
-                            repos.forEach((repo) => {
-                                if (repo.name == desiredRepo) {
-                                    let lastUpdated = new Date(repo.updated_at);
-                                    let day = lastUpdated.getUTCDate();
-                                    let month = lastUpdated.getUTCMonth() + 1;
-                                    let year = lastUpdated.getUTCFullYear();
-                                    $(dateTagClass).text(`Last updated: ${day}-${month}-${year}`);
-                                }
-                            });
-                        }
-                    };
-                    xhttp.open("GET", "https://api.github.com/users/gadea-lucas/repos", true);
-                    xhttp.send();
-                </script>
+                <ul class="flex-column">
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span class="visits fw-light"> Visits: <span id="visit-count">0</span></span>
+                    </li>
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span class="date fw-light"></span>
+                    </li>
+                </ul>
             </div>
         </div>
     </footer>

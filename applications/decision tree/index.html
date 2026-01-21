@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="css/styles.css" />
     <script type="module" src="../lib/entropy-calculator.js" defer></script>
     <script type="module" src="../lib/input-check.js" defer></script>
+    <script type="module"src="../js/footer.js" defer></script>
     <script type="module" src="js/dataTable.js" defer></script>
     <script type="module" src="js/stepbystep.js" defer></script>
     <script type="module" src="js/tree.js" defer></script>
@@ -552,7 +553,6 @@
                     
                 </ul>
                 <ul class="flex-column">
-                    <span class="fw-bold "></span>
                     <li class="mb-2" style="list-style-type: none;">
                         <span>Ismael Ramos Pérez</span>
                     </li>
@@ -566,31 +566,14 @@
             </div>
             
             <div class="col-md-3 col-auto d-flex align-items-center">
-                <span class="date fw-light"></span>
-                <script>
-                    // Get the date of when the repository was last updated and write it into the corresponding footer span
-                    const desiredRepo = "decision-trees-simulator-teachers";
-                    const dateTagClass = ".date";
-
-                    var xhttp = new XMLHttpRequest();
-                    xhttp.onreadystatechange = function () {
-                        if (this.readyState == 4 && this.status == 200) {
-                            let repos = JSON.parse(this.responseText);
-
-                            repos.forEach((repo) => {
-                                if (repo.name == desiredRepo) {
-                                    let lastUpdated = new Date(repo.updated_at);
-                                    let day = lastUpdated.getUTCDate();
-                                    let month = lastUpdated.getUTCMonth() + 1;
-                                    let year = lastUpdated.getUTCFullYear();
-                                    $(dateTagClass).text(`Last updated: ${day}-${month}-${year}`);
-                                }
-                            });
-                        }
-                    };
-                    xhttp.open("GET", "https://api.github.com/users/gadea-lucas/repos", true);
-                    xhttp.send();
-                </script>
+                <ul class="flex-column">
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span class="visits fw-light"> Visits: <span id="visit-count">0</span></span>
+                    </li>
+                    <li class="mb-2" style="list-style-type: none;">
+                        <span class="date fw-light"></span>
+                    </li>
+                </ul>
             </div>
         </div>
     </footer>

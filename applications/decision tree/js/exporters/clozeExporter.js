@@ -559,7 +559,6 @@ function getAnchorsFromSvg() {
     anchorAttr.fs = fs;
     anchorMetric.fs = fs - 2;
 
-    // ✅ ahora sí guardamos el elemento
     anchors[logicalId] = { el, type: (isLeaf?'leaf':'node'), attr: anchorAttr, metric: anchorMetric };
   }
 
@@ -832,7 +831,7 @@ function getVisibleNodeRects() {
 }
 
 function getVisibleEdges(visibleIds) {
-  const root = getTreeData();                 // tu función
+  const root = getTreeData();                 
   const vis = new Set(visibleIds);            // solo los del step
   const edges = [];
   (function walk(n){
@@ -1150,7 +1149,6 @@ function buildDataTableSection(lang = getLang()) {
     th.style.backgroundImage = 'none';
     th.style.color = bodyFg;
     th.style.fontWeight = '600';
-    //th.style.borderColor = "#c5c9ca"; 
   });
 
   // (opcional) quitar clases que puedan traer estilos de otros steps
@@ -1168,13 +1166,6 @@ function buildDataTableSection(lang = getLang()) {
   }
 
   const css = _collectCss(table) + (_vertRule(table) || '');
-
-//   return `
-// <section id="dataset" style="page-break-inside:avoid; margin-top:1rem;">
-//   <h2 style="font-size:1.15rem;margin:0 0 .5rem;">Dataset</h2>
-//   ${css}
-//   ${clone.outerHTML}
-// </section>`;
 
   return `
   <section id="dataset" style="page-break-inside:avoid; margin-top:1rem;">
