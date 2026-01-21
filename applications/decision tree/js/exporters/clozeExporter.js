@@ -1416,6 +1416,15 @@ function renderTheoryQuestions() {
       <div class="card-header d-flex align-items-center justify-content-between">
         <span>${isEs ? 'Pregunta' : 'Question'} ${idx + 1}</span>
         <div class="btn-group btn-group-sm" role="group">
+          <button class="btn btn-outline-secondary" data-role="move-up"
+                  title="${isEs ? 'Subir' : 'Move up'}">
+            <i class="bi bi-caret-up-fill"></i>
+          </button>
+          <button class="btn btn-outline-secondary" data-role="move-down"
+                  title="${isEs ? 'Bajar' : 'Move down'}">
+            <i class="bi bi-caret-down-fill"></i>
+          </button>
+
           <button class="btn btn-outline-secondary" data-role="duplicate"
                   title="${isEs ? 'Duplicar' : 'Duplicate'}">
             <i class="bi bi-files"></i>
@@ -1426,6 +1435,7 @@ function renderTheoryQuestions() {
           </button>
         </div>
       </div>
+
       <div class="card-body">
         <label class="form-label">
           ${isEs
@@ -1448,6 +1458,7 @@ function renderTheoryQuestions() {
               ${isEs ? 'Insertar MULTICHOICE' : 'Insert MULTICHOICE'}
             </button>
           </div>
+
           <div class="btn-group btn-group-sm" role="group">
             <button type="button" class="btn btn-outline-secondary"
                     data-role="preview">
@@ -1475,44 +1486,41 @@ function renderTheoryQuestions() {
       }
     });
 
-    const btnDel = card.querySelector('button[data-role="delete"]');
-    btnDel.addEventListener('click', () => {
-      THEORY_DIRTY = true;
-      THEORY_QUESTIONS = THEORY_QUESTIONS.filter(obj => obj.id !== q.id);
-      renderTheoryQuestions();
-    });
-
-    const btnDup = card.querySelector('button[data-role="duplicate"]');
-    btnDup.addEventListener('click', () => {
-      THEORY_DIRTY = true;
-      THEORY_QUESTIONS.splice(idx + 1, 0, {
-        id: THEORY_NEXT_ID++,
-        text: q.text
-      });
-      renderTheoryQuestions();
-    });
-
-    // Botones de plantillas
+    // Insert templates
     card.querySelectorAll('button[data-role="insert-tpl"]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const kind = btn.getAttribute('data-tpl');
-        let snippet = '';
+        const tpl = btn.getAttribute('data-tpl');
 
-        if (kind === 'short') {
-          snippet = '{1:SHORTANSWER:=respuesta_correcta}';
-        } else if (kind === 'numerical') {
-          snippet = '{1:NUMERICAL:=5:0.01}';
-        } else if (kind === 'multi') {
-          snippet = '{1:MULTICHOICE_S:%100%opcion_correcta#~%-33%opcion2#~%-33%opcion3#~%-33%opcion4#}';
+        let snippet = '';
+        if (tpl === 'short') {
+          snippet = '{1:SHORTANSWER:%100%Answer}';
+        } else if (tpl === 'numerical') {
+          snippet = '{1:NUMERICAL:=3}';
+        } else if (tpl === 'multi') {
+          snippet = '{1:MULTICHOICE_S:%100%Option1#~%-50%Option2#}';
         }
 
-        if (!snippet) return;
-        insertAtCursor(ta, snippet);
+        // Inserta en el cursor del textarea
+        const start = ta.selectionStart ?? ta.value.length;
+        const end = ta.selectionEnd ?? ta.value.length;
+        const before = ta.value.slice(0, start);
+        const after = ta.value.slice(end);
+
+        ta.value = before + snippet + after;
+        ta.focus();
+        const newPos = start + snippet.length;
+        ta.setSelectionRange(newPos, newPos);
+
+        THEORY_DIRTY = true;
         q.text = ta.value;
+
+        if (previewBox && previewBox.style.display !== 'none') {
+          previewBox.innerHTML = buildClozePreviewHtmlFromText(ta.value);
+        }
       });
     });
 
-    // Botón de preview
+    // Preview
     const btnPreview = card.querySelector('button[data-role="preview"]');
     btnPreview.addEventListener('click', () => {
       const html = buildClozePreviewHtmlFromText(ta.value);
@@ -1523,6 +1531,41 @@ function renderTheoryQuestions() {
         previewBox.innerHTML = '';
         previewBox.style.display = 'none';
       }
+    });
+
+    // Delete
+    const btnDelete = card.querySelector('button[data-role="delete"]');
+    btnDelete.addEventListener('click', () => {
+      THEORY_DIRTY = true;
+      THEORY_QUESTIONS = THEORY_QUESTIONS.filter(obj => obj.id !== q.id);
+      renderTheoryQuestions();
+    });
+
+    // Duplicate
+    const btnDup = card.querySelector('button[data-role="duplicate"]');
+    btnDup.addEventListener('click', () => {
+      THEORY_DIRTY = true;
+      THEORY_QUESTIONS.splice(idx + 1, 0, {
+        id: THEORY_NEXT_ID++,
+        text: q.text
+      });
+      renderTheoryQuestions();
+    });
+
+    // ⬆ Move up
+    const btnUp = card.querySelector('button[data-role="move-up"]');
+    btnUp.disabled = (idx === 0);
+    btnUp.addEventListener('click', () => {
+      moveTheoryQuestion(idx, idx - 1);
+      renderTheoryQuestions();
+    });
+
+    // ⬇ Move down
+    const btnDown = card.querySelector('button[data-role="move-down"]');
+    btnDown.disabled = (idx === THEORY_QUESTIONS.length - 1);
+    btnDown.addEventListener('click', () => {
+      moveTheoryQuestion(idx, idx + 1);
+      renderTheoryQuestions();
     });
 
     container.appendChild(card);
@@ -1667,6 +1710,34 @@ function makeMultiChoiceCloze(correctList, distractors) {
     ...distractors.map(opt => '%-33%' + opt + '#')
   ];
   return `{1:MULTICHOICE_M:${parts.join('~')}}`;
+}
+
+function getTheoryDatasetKey() {
+  const cols = getDatasetColumns() || [];
+  const rowCount = getDatasetRowCount() || 0;
+
+  const stats = getTreeStatsForTheory();
+  const rootAttr = stats?.rootAttr || '';
+  const used = (stats?.usedAttributes || []).join(',');
+
+  return JSON.stringify({ cols, rowCount, rootAttr, used });
+}
+
+function resetTheoryToDefaults(lang) {
+  const defaults = getDefaultTheoryQuestions(lang);
+  THEORY_QUESTIONS = defaults.map(txt => ({ id: THEORY_NEXT_ID++, text: txt }));
+  THEORY_DIRTY = false;
+}
+
+function moveTheoryQuestion(fromIndex, toIndex) {
+  if (fromIndex < 0 || fromIndex >= THEORY_QUESTIONS.length) return;
+  if (toIndex < 0 || toIndex >= THEORY_QUESTIONS.length) return;
+  if (fromIndex === toIndex) return;
+
+  const [item] = THEORY_QUESTIONS.splice(fromIndex, 1);
+  THEORY_QUESTIONS.splice(toIndex, 0, item);
+
+  THEORY_DIRTY = true;
 }
 
 
@@ -2370,25 +2441,6 @@ function exportTheoryQuestionsXmlFromModel() {
     a.remove();
     URL.revokeObjectURL(url);
   });
-}
-
-function getTheoryDatasetKey() {
-  // Firma “estable” del dataset actual: columnas + nº filas
-  const cols = getDatasetColumns() || [];
-  const rowCount = getDatasetRowCount() || 0;
-
-  // También incluimos info del árbol si existe (por si las cols son iguales pero el árbol cambia)
-  const stats = getTreeStatsForTheory();
-  const rootAttr = stats?.rootAttr || '';
-  const used = (stats?.usedAttributes || []).join(',');
-
-  return JSON.stringify({ cols, rowCount, rootAttr, used });
-}
-
-function resetTheoryToDefaults(lang) {
-  const defaults = getDefaultTheoryQuestions(lang);
-  THEORY_QUESTIONS = defaults.map(txt => ({ id: THEORY_NEXT_ID++, text: txt }));
-  THEORY_DIRTY = false;
 }
 
 function openTheoryModal() {
