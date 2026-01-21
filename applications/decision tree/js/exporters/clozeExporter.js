@@ -88,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 let THEORY_QUESTIONS = []; // {id, text}
 let THEORY_NEXT_ID = 1;
+let THEORY_DATASET_KEY = null;
+let THEORY_DIRTY = false;
 document.addEventListener('DOMContentLoaded', () => {
   const btnExportTheory = document.getElementById('btnExportTheory');
   if (btnExportTheory) {
@@ -98,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAdd = document.getElementById('btnTheoryAddQuestion');
   if (btnAdd) {
     btnAdd.addEventListener('click', () => {
+      THEORY_DIRTY = true;
       THEORY_QUESTIONS.push({
         id: THEORY_NEXT_ID++,
         text: ''
@@ -1465,6 +1468,7 @@ function renderTheoryQuestions() {
     const previewBox = card.querySelector('[data-role="preview-container"]');
 
     ta.addEventListener('input', () => {
+      THEORY_DIRTY = true;
       q.text = ta.value;
       if (previewBox && previewBox.style.display !== 'none') {
         previewBox.innerHTML = buildClozePreviewHtmlFromText(ta.value);
@@ -1473,12 +1477,14 @@ function renderTheoryQuestions() {
 
     const btnDel = card.querySelector('button[data-role="delete"]');
     btnDel.addEventListener('click', () => {
+      THEORY_DIRTY = true;
       THEORY_QUESTIONS = THEORY_QUESTIONS.filter(obj => obj.id !== q.id);
       renderTheoryQuestions();
     });
 
     const btnDup = card.querySelector('button[data-role="duplicate"]');
     btnDup.addEventListener('click', () => {
+      THEORY_DIRTY = true;
       THEORY_QUESTIONS.splice(idx + 1, 0, {
         id: THEORY_NEXT_ID++,
         text: q.text
@@ -2366,6 +2372,25 @@ function exportTheoryQuestionsXmlFromModel() {
   });
 }
 
+function getTheoryDatasetKey() {
+  // Firma “estable” del dataset actual: columnas + nº filas
+  const cols = getDatasetColumns() || [];
+  const rowCount = getDatasetRowCount() || 0;
+
+  // También incluimos info del árbol si existe (por si las cols son iguales pero el árbol cambia)
+  const stats = getTreeStatsForTheory();
+  const rootAttr = stats?.rootAttr || '';
+  const used = (stats?.usedAttributes || []).join(',');
+
+  return JSON.stringify({ cols, rowCount, rootAttr, used });
+}
+
+function resetTheoryToDefaults(lang) {
+  const defaults = getDefaultTheoryQuestions(lang);
+  THEORY_QUESTIONS = defaults.map(txt => ({ id: THEORY_NEXT_ID++, text: txt }));
+  THEORY_DIRTY = false;
+}
+
 function openTheoryModal() {
   const lang = getLang();
 
@@ -2405,12 +2430,18 @@ function openTheoryModal() {
     }
   })();
 
-  if (!THEORY_QUESTIONS.length) {
-    // Primera vez: inicializamos con la plantilla por defecto (depende de idioma)
-    const defaults = getDefaultTheoryQuestions(lang);
-    THEORY_QUESTIONS = defaults.map(txt => ({ id: THEORY_NEXT_ID++, text: txt }));
-    
+  const currentKey = getTheoryDatasetKey();
+  if (THEORY_DATASET_KEY !== currentKey) {
+    THEORY_DATASET_KEY = currentKey;
+    THEORY_QUESTIONS = [];
+    THEORY_NEXT_ID = 1;
+    resetTheoryToDefaults(lang);
   }
+
+  if (!THEORY_QUESTIONS.length) {
+    resetTheoryToDefaults(lang);
+  }
+
 
   renderTheoryQuestions();
 
