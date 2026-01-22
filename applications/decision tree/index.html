@@ -39,7 +39,7 @@
     <header class="py-3 mb-4 border-bottom bg-body-secondary bg-opacity-75 ">
         <div class="container d-flex flex-wrap align-items-center justify-content-center ">
             <a href="https://www.ubu.es" class="d-flex align-items-center me-2 ">
-                <img src="../img/ubulogocolorfull.png" width="100" height="50">
+                <img src="../img/ubulogocolorfull.png" width="100" height="50" alt="UBU logo">
             </a>
             <a href="../../index.html" class="fw-bold fs-5 ms-2 me-2 nav-link link-dark link-opacity-50-hover">Decision
                 Tree Simulator</a>
@@ -291,7 +291,7 @@
                                                         <span class="fw-bold">Example:</span>
                                                     </div>
                                                     <div class="text-center mb-2">
-                                                        <img src="img/csvExample.png" width="280" height="200">
+                                                        <img src="img/csvExample.png" width="280" height="200" alt="CSV format exmaple">
                                                     </div>
                                                     <div class="div text-center">
                                                         <span>Failure to meet these requirements may result in errors or
@@ -610,36 +610,38 @@
                         </div>
                     </div>
                     
-                    <div style="display:grid;grid-template-columns:1fr 200px;gap:16px;">
+                    <div class="cloze-layout">
                         <!-- Table view -->
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Node</th>
-                                        <th>Field</th>
-                                        <th>Include</th>
-                                        <th>Type</th>
-                                        <th>Answer</th>
-                                        <th>Tolerance</th>
-                                        <th>
-                                            Hint 
-                                            <span class="ms-1 text-muted"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-placement="top"
-                                                    title="These hints are ONLY used in the XML export (Moodle general feedback). HTML export ignores them."
-                                                    style="cursor: help;">
-                                                <i class="bi bi-question-circle"></i>
-                                            </span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="clozeConfigRows"><!-- dynamic rows --></tbody>
-                            </table>
+                        <div class="cloze-table-pane">
+                            <div class="table-responsive cloze-table-scroll">
+                                <table class="table table-sm align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Node</th>
+                                            <th>Field</th>
+                                            <th>Include</th>
+                                            <th>Type</th>
+                                            <th>Answer</th>
+                                            <th>Tolerance</th>
+                                            <th>
+                                                Hint 
+                                                <span class="ms-1 text-muted"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        title="These hints are ONLY used in the XML export (Moodle general feedback). HTML export ignores them."
+                                                        style="cursor: help;">
+                                                    <i class="bi bi-question-circle"></i>
+                                                </span>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clozeConfigRows"><!-- dynamic rows --></tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- Lateral preview -->
-                        <aside>
+                        <aside class="cloze-preview-pane">
                             <div style="font-weight:600;margin-bottom:8px">Tree preview</div> 
                             <div id="clozePreview"></div>
                         </aside>
@@ -661,7 +663,7 @@
 
     <!-- Theory questions modal -->
     <div class="modal fade" id="theoryModal" tabindex="-1" aria-labelledby="theoryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl"> 
         <div class="modal-content">
         <div class="modal-header">
             <h5 class="modal-title" id="theoryModalLabel">Export theory Moodle questions (current step)</h5>

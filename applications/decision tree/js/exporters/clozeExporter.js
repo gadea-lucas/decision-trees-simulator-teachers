@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-let THEORY_QUESTIONS = []; // {id, text}
+let THEORY_QUESTIONS = []; // format: {id, text}
 let THEORY_NEXT_ID = 1;
 let THEORY_DATASET_KEY = null;
 let THEORY_DIRTY = false;
@@ -711,34 +711,93 @@ function pickTextElementForKey(anchorEl, key) {
   return best;
 }
 
-function svgToPngDataUrl(svgEl) {
+function svgToPngDataUrl(svgEl, maxW = null, maxH = null, mode = 'auto', renderScale = 1) {
   return new Promise((resolve, reject) => {
     try {
-      if (!svgEl.getAttribute('xmlns')) svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      if (!svgEl.getAttribute('xmlns:xlink')) svgEl.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      // 1) Clonar para no mutar el SVG original
+      const clone = svgEl.cloneNode(true);
 
-      enforceSvgFont(svgEl, "Arial, Helvetica, sans-serif");
+      if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      if (!clone.getAttribute('xmlns:xlink')) clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
 
-      const vb = (svgEl.getAttribute('viewBox') || '0 0 800 600').split(/\s+/).map(Number);
-      const [, , vbW = 800, vbH = 600] = vb;
+      enforceSvgFont(clone, "Arial, Helvetica, sans-serif");
 
-      const xml = new XMLSerializer().serializeToString(svgEl);
+      // 2) ViewBox base (fallback)
+      let vb = (clone.getAttribute('viewBox') || '0 0 800 600').split(/\s+/).map(Number);
+      let vbX = vb[0] || 0, vbY = vb[1] || 0, vbW = vb[2] || 800, vbH = vb[3] || 600;
+
+      // 3) RECORTE para el árbol: usar bbox REAL del SVG original (incluye edges + labels)
+      if (mode === 'tree') {
+        let bb = null;
+        try {
+          bb = svgEl.getBBox();
+        } catch (e) {
+          bb = null;
+        }
+
+        // Fallback: bbox de nodos si getBBox falla (por si acaso)
+        if ((!bb || !bb.width || !bb.height) && typeof getNodesBBoxWithDynamicPadding === 'function') {
+          const bb2 = getNodesBBoxWithDynamicPadding();
+          if (bb2 && bb2.width > 0 && bb2.height > 0) {
+            bb = { x: bb2.x, y: bb2.y, width: bb2.width, height: bb2.height };
+          }
+        }
+
+        if (bb && bb.width > 0 && bb.height > 0) {
+          const pad = 100;
+          vbX = bb.x - pad;
+          vbY = bb.y - pad;
+          vbW = bb.width + pad * 2;
+          vbH = bb.height + pad * 2;
+
+          vbW = Math.max(180, vbW);
+          vbH = Math.max(140, vbH);
+
+          clone.setAttribute('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`);
+          clone.removeAttribute('width');
+          clone.removeAttribute('height');
+        }
+      }
+
+      // 4) Serializar SVG a data URL
+      const xml = new XMLSerializer().serializeToString(clone);
       const svg64 = btoa(unescape(encodeURIComponent(xml)));
       const url = `data:image/svg+xml;base64,${svg64}`;
 
       const img = new Image();
-      img.onload = async function() {
+      img.onload = () => {
+        // 5) Tamaño "lógico" de salida (CSS size del PNG), sin deformar
+        let outW = vbW;
+        let outH = vbH;
+
+        if (maxW && maxH) {
+          const s = Math.min(maxW / vbW, maxH / vbH);
+          outW = Math.max(1, Math.round(vbW * s));
+          outH = Math.max(1, Math.round(vbH * s));
+        }
+
+        // 6) Render a alta resolución (más píxeles) para evitar pixelado
         const dpr = window.devicePixelRatio || 1;
+        const extra = Math.max(1, Number(renderScale) || 1);
+        const scale = dpr * extra;
+
         const canvas = document.createElement('canvas');
-        canvas.width = Math.ceil(vbW * dpr);
-        canvas.height = Math.ceil(vbH * dpr);
+        canvas.width = Math.ceil(outW * scale);
+        canvas.height = Math.ceil(outH * scale);
+
         const ctx = canvas.getContext('2d');
-        ctx.scale(dpr, dpr);
-        ctx.drawImage(img, 0, 0, vbW, vbH);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        ctx.drawImage(img, 0, 0, outW, outH);
+
         resolve(canvas.toDataURL('image/png'));
       };
+
       img.onerror = reject;
       img.src = url;
+
     } catch (e) {
       reject(e);
     }
@@ -802,10 +861,7 @@ function ensurePreviewBox() {
   box.style.border = '1px solid #e5e7eb';
   box.style.borderRadius = '8px';
   box.style.padding = '6px';
-  // altura = la de la tabla (con mínimo)
-  const table = document.querySelector('#clozeModal table');
-  const h = Math.max(260, Math.ceil(table?.getBoundingClientRect().height || 0));
-  box.style.height = h + 'px';
+  box.style.height = '100%';
   return box;
 }
 
@@ -906,6 +962,15 @@ function rebuildPreviewSvg(highlightId = null) {
   const offX  = (dstW - (maxX-minX)*scale)/2;
   const offY  = (dstH - (maxY-minY)*scale)/2;
 
+  // --- tamaño relativo (según tamaño de nodo ya escalado) ---
+  const avgNodeH = nodes.reduce((s,n)=>s + (n.h*scale), 0) / Math.max(nodes.length, 1);
+  const ratio = Math.max(0.45, Math.min(1.0, avgNodeH / 92)); // 92 ≈ alto símbolo "node"
+  // Ajustes (clamp)
+  const edgeStroke = Math.max(0.45, Math.min(1.2, 1.2 * ratio));
+  const edgeFont   = Math.max(6,    Math.min(10,  10  * ratio));
+  const markerSize = Math.max(1.6,  Math.min(3.2, 2.4 * ratio));
+
+
   // SVG vacío destino
   const out = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   out.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -919,6 +984,12 @@ function rebuildPreviewSvg(highlightId = null) {
   const defs = cloneNeededDefs(src, nodes.map(n=>n.symId).filter(Boolean));
   out.appendChild(defs);
 
+  out.querySelectorAll('marker').forEach(mk => {
+    mk.setAttribute('markerWidth',  String(markerSize));
+    mk.setAttribute('markerHeight', String(markerSize));
+  });
+
+
   // ramas: líneas simples desde centro-bajo del padre a centro-alto del hijo
   const id2node = Object.fromEntries(nodes.map(n => [n.nodeId, n]));
   const edges = getVisibleEdges(nodes.map(n => n.nodeId));
@@ -926,13 +997,12 @@ function rebuildPreviewSvg(highlightId = null) {
   const gEdges = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   gEdges.setAttribute('fill', 'none');
   gEdges.setAttribute('stroke', '#444');
-  gEdges.setAttribute('stroke-width', '1.2');
-  gEdges.setAttribute('vector-effect', 'non-scaling-stroke');
+  gEdges.setAttribute('stroke-width', String(edgeStroke));
   gEdges.setAttribute('marker-end', 'url(#arrowMarker)');
 
   const gEdgeLabels = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   gEdgeLabels.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
-  gEdgeLabels.setAttribute('font-size', '10');
+  gEdgeLabels.setAttribute('font-size', String(edgeFont));
   gEdgeLabels.setAttribute('fill', '#111');
 
   edges.forEach(([p,c], i) => {
@@ -1191,7 +1261,7 @@ function buildClozeExerciseHtml({ treeBlockHtml, questionsListHtml, datasetSecti
   main { max-width: 920px; margin: 1.25rem auto; padding: 0 1rem 2rem; }
   h1 { font-size: 1.4rem; margin: 0 0 .5rem; }
   p.lead { margin:.25rem 0 1rem; color:var(--muted); }
-  section { margin-top: 1rem; } figure { margin:.75rem 0; display:flex; justify-content:center; } figure>*{max-width:100%;height:auto;}
+  section { margin-top: 1rem; } figure { margin:.75rem 0; display:flex; flex-direction:column; align-items:center; } figure>*{max-width:100%;height:auto;}
   .note{color:var(--muted);font-size:.95rem;} ul.cloze{margin:.5rem 0 0 1.25rem;} ul.cloze li{margin:.35rem 0;} hr{border:0;border-top:1px solid var(--line);margin:1rem 0;}
 </style>
 </head>
@@ -1221,6 +1291,52 @@ function buildClozeExerciseHtml({ treeBlockHtml, questionsListHtml, datasetSecti
 </main>
 </body>
 </html>`;
+}
+
+function getDynamicTreePngTargetSize() {
+  const bb = (typeof getNodesBBoxWithDynamicPadding === 'function')
+    ? getNodesBBoxWithDynamicPadding()
+    : null;
+
+  // Fallback
+  if (!bb || !bb.width || !bb.height) {
+    return { maxW: 600, maxH: 600 };
+  }
+
+  const count = bb.count || 1;
+
+  // ===== CASOS CLAROS POR NÚMERO DE NODOS =====
+  // Esto hace el comportamiento PREDECIBLE (clave)
+  if (count === 1) {
+    return { maxW: 220, maxH: 160 };
+  }
+
+  if (count <= 3) {
+    return { maxW: 300, maxH: 220 };
+  }
+
+  if (count <= 7) {
+    return { maxW: 420, maxH: 320 };
+  }
+
+  if (count <= 15) {
+    return { maxW: 560, maxH: 420 };
+  }
+
+  // ===== ÁRBOLES GRANDES: escalado continuo por bbox =====
+  const MAX = 896;
+  const QUALITY = 1.1;
+
+  const rawW = bb.width * QUALITY;
+  const rawH = bb.height * QUALITY;
+
+  const maxW = Math.min(MAX, Math.round(rawW));
+  const maxH = Math.min(MAX, Math.round(rawH));
+
+  return {
+    maxW: Math.max(600, maxW),
+    maxH: Math.max(450, maxH)
+  };
 }
 
 
@@ -1836,10 +1952,10 @@ ${targetsSorted.map(t => {
 
   // ---- legend SVG DOM -> PNG igual que en HTML ----
   const legendSvg = buildTreeLegendSvg_DOM(lang);
-
+  const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(outSvg, 896, 896),
-    svgToPngDataUrl(legendSvg, 900, 260)
+    svgToPngDataUrl(outSvg, maxW, maxH, 'tree', 2),
+    svgToPngDataUrl(legendSvg, 720, 240) // (o 900,260) sin 'tree'
   ]).then(([treePngDataUrl, legendPngDataUrl]) => {
 
     const treeBlockHtml = `
@@ -2018,10 +2134,10 @@ ${targetsSorted.map(t => {
   function tfn(key){ return t(key, lang); }
 
   const legendSvg = buildTreeLegendSvg_DOM(lang); 
-
+  const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(outSvg, 896, 896),
-    svgToPngDataUrl(legendSvg, 720, 240)
+    svgToPngDataUrl(outSvg, maxW, maxH, 'tree', 2),
+    svgToPngDataUrl(legendSvg, 720, 240) // (o 900,260) sin 'tree'
   ]).then(([treePngDataUrl, legendPngDataUrl]) => {
 
     const treeBlockHtml = `
@@ -2286,7 +2402,6 @@ function openClozeModal(){
   const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
   function onShown() {
-    fitPreviewHeightToTable();  
     rebuildPreviewSvg()
     modalEl.removeEventListener('shown.bs.modal', onShown);
   }
@@ -2346,11 +2461,12 @@ function exportTheoryQuestionsXmlFromModel() {
     : '';
 
   const legendPromise = legendSvgEl
-    ? svgToPngDataUrl(legendSvgEl, 900, 260)
+    ? svgToPngDataUrl(legendSvgEl, 720, 240) // (o 900,260) sin 'tree'
     : Promise.resolve(null);
 
+  const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(treeClone, 896, 896),
+    svgToPngDataUrl(outSvg, maxW, maxH, 'tree'),
     legendPromise
   ]).then(([treePngUrl, legendPngUrl]) => {
     const treeFileName   = `tree_step${stepLabel}.png`;

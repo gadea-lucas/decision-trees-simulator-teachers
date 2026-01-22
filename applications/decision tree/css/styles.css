@@ -48,6 +48,40 @@ footer {
   }
 
 
+/* ===== CLOZE modal layout: tabla con scroll + preview fijo ===== */
+#clozeModal .modal-dialog {
+  max-width: 96vw; /* un pelín más grande que XL/XXL */
+}
+
+#clozeModal .modal-content{
+  height: 90vh;            /* para que haya “alto fijo” */
+}
+
+#clozeModal .modal-body{
+  display: flex;
+  flex-direction: column;  /* botones arriba + contenido abajo */
+  overflow: hidden;        /* evita que el body scrollee */
+}
+
+/* La zona de (tabla + preview) ocupa el alto restante del modal-body */
+#clozeModal .cloze-layout{
+  display: grid;
+  grid-template-columns: 1fr 360px; /* preview más ancho que 200px */
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0; /* CLAVE para que el scroll interno funcione bien */
+}
+
+/* Tabla: solo esta parte scrollea */
+#clozeModal .cloze-table-pane{
+  min-height: 0; /* CLAVE */
+}
+
+#clozeModal .cloze-table-scroll{
+  height: 100%;
+  overflow: auto;
+}
+
 /* Tree preview for the CLOZE modal */
 #clozePreview{
   width:100%;
@@ -56,13 +90,30 @@ footer {
   border:1px solid #e5e7eb;
   border-radius:8px;
   padding:6px;
+  flex: 1 1 auto; 
+  min-height: 260px;
 }
+
 #clozePreview svg{
   display:block;
   width:100%;
-  height:100%;
+  height:auto; 
 }
 
+#clozeModal .cloze-preview-pane{
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* Hacer más estrecha la columna Tolerance (6ª) */
+#clozeModal table th:nth-child(6),
+#clozeModal table td:nth-child(6){
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+}
 
 
 
