@@ -216,11 +216,13 @@
                 </select>
                 <script type="module">
                     import { loadExampleData } from "./js/csvHandler.js";
-
                     var selectEl = document.getElementById("selectExData");
                     selectEl.addEventListener("change", function (e) {
-                        var selectedExample = $(this).val();
+                        var selectedExample = this.value;
                         loadExampleData(selectedExample);
+                    });
+                    window.addEventListener("pageshow", () => {
+                        selectEl.selectedIndex = 0;
                     });
                 </script>
             </div>
