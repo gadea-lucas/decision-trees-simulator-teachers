@@ -2466,7 +2466,7 @@ function exportTheoryQuestionsXmlFromModel() {
 
   const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(outSvg, maxW, maxH, 'tree'),
+    svgToPngDataUrl(treeClone, maxW, maxH, 'tree'),
     legendPromise
   ]).then(([treePngUrl, legendPngUrl]) => {
     const treeFileName   = `tree_step${stepLabel}.png`;
