@@ -188,84 +188,6 @@ function t(key, lang = getLang()) {
 }
 
 // HELPERS
-function buildTreeLegendHtml(lang = 'en') {
-  // icono cuadradito (20x20 fijo para evitar defaults de 300x150 en Moodle)
-  const sq = (fill) =>
-    `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-          viewBox="0 0 20 20"
-          style="flex:none;display:inline-block;vertical-align:middle;">
-        <rect x="1" y="1" width="18" height="18" rx="2" ry="2"
-              fill="${fill}" stroke="#9ca3af"></rect>
-     </svg>`;
-
-  const t = (k) => ({
-    legend:         { en:'Legend', es:'Leyenda' }[lang],
-    nodeHeader:     { en:'Node header', es:'Cabecera de nodo' }[lang],
-    nodeHeaderTxt:  { en:'— internal node/leaf title area (green).',
-                      es:'— área de título del nodo/hoja (verde).' }[lang],
-    nTxt:           { en:'number of training samples that reach this node.',
-                      es:'número de muestras que llegan al nodo.' }[lang],
-    igTxt:          { en:'Information Gain computed at this node (criterion for ID3).',
-                      es:'Information Gain en este nodo (criterio de ID3).' }[lang],
-    attrName:       { en:'Attribute name',
-                      es:'Nombre del atributo' }[lang],
-    attrNameTxt:    { en:'— attribute used to split at a node (blue band at the bottom of a node).',
-                      es:'— atributo usado para dividir (banda azul en la base del nodo).' }[lang],
-    labelValue:     { en:'Label value', es:'Valor de la etiqueta' }[lang],
-    labelValueTxt:  { en:'— class predicted at a leaf (yellow band at the bottom of a leaf).',
-                      es:'— clase predicha en la hoja (banda amarilla en la base).' }[lang],
-    branches:       { en:'Branches & labels',
-                      es:'Ramas y etiquetas' }[lang],
-    branchesTxt:    { en:'— arrows connect parent→child; the text along the arrow is the attribute value that follows that branch.',
-                      es:'— las flechas conectan padre→hijo; el texto en la flecha es el valor del atributo que sigue esa rama.' }[lang],
-    note:           { en:'Note', es:'Nota' }[lang],
-    noteTxt:        { en:'numbers in square brackets (e.g. [1], [2]) mark the positions that correspond to the Cloze questions below.',
-                      es:'los números entre corchetes (p. ej. [1], [2]) indican las posiciones que corresponden a las preguntas Cloze.' }[lang],
-  }[k]);
-
-  // cada fila usa margin en vez de gap (más fiable en Moodle)
-  const row = (icon, html) =>
-    `<div style="display:flex;align-items:center;margin:6px 0;">
-       ${icon}
-       <div style="margin:0 0 0 10px;line-height:1.25;">
-         ${html}
-       </div>
-     </div>`;
-
-  return `
-<div id="legend" style="margin-top:12px;line-height:1.25;">
-  <h3 style="font-size:1.05rem;margin:.25rem 0 .5rem;">${t('legend')}</h3>
-
-  ${row(sq('#A8E6A3'), `<span style="font-weight:600;">${t('nodeHeader')}</span> ${t('nodeHeaderTxt')}`)}
-
-  ${row(sq('#ffffff'), `
-      <div style="margin:0;">
-        <span style="font-weight:600;"><code>n</code></span>: ${t('nTxt')}
-      </div>
-      <div style="margin:0;">
-        <span style="font-weight:600;"><code>IG</code></span>: ${t('igTxt')}
-      </div>
-  `)}
-
-  ${row(sq('#ADD8E6'), `<span style="font-weight:600;">${t('attrName')}</span> ${t('attrNameTxt')}`)}
-
-  ${row(sq('#FFDD77'), `<span style="font-weight:600;">${t('labelValue')}</span> ${t('labelValueTxt')}`)}
-
-  ${row(
-    // flechita simple hecha en SVG con tamaño fijo
-    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="20"
-          viewBox="0 0 24 20" style="flex:none;display:inline-block;vertical-align:middle;">
-        <path d="M2 10 H18" stroke="#111" stroke-width="1.2" />
-        <path d="M18 7 L22 10 L18 13" fill="none" stroke="#111" stroke-width="1.2"/>
-     </svg>`,
-    `<span style="font-weight:600;">${t('branches')}</span> ${t('branchesTxt')}`
-  )}
-
-  <div style="margin-top:8px;">
-    <span style="font-weight:600;">${t('note')}:</span> ${t('noteTxt')}
-  </div>
-</div>`;
-}
 
 function stripTags(html) {
   return String(html || '').replace(/<[^>]+>/g, '');
@@ -634,33 +556,6 @@ function getUseInsideAnchor(anchorEl) {
   return anchorEl?.querySelector('use[href], use[xlink\\:href]') || null;
 }
 
-function buildEdgeLabelLookup() {
-  const root = getTreeData();
-  const map = {};
-
-  const pick = (parent, child) => {
-    const candidates = [
-      child.edgeLabel, child.branch, child.value, child.branchValue,
-      child.edge, child.matchValue, child.splitValue,
-      child.condition?.value, child.condition?.label,
-      // a veces el label vive en el objeto del enlace
-      child.linkLabel, child.labelOnEdge
-    ];
-    const txt = candidates.find(v => typeof v === 'string' && v.trim().length) || '';
-    return String(txt).trim();
-  };
-
-  (function walk(n){
-    if (!n || !n.children) return;
-    n.children.forEach(ch => {
-      map[`${n.id}|${ch.id}`] = pick(n, ch);
-      walk(ch);
-    });
-  })(root);
-
-  return map; // key: "parentId|childId" -> label string
-}
-
 function guessSymbolType(symbolEl) {
   const id = symbolEl?.getAttribute('id') || '';
   if (id.startsWith('node')) return 'node';
@@ -682,33 +577,6 @@ function setSymbolTextForKey(symbolEl, nodeType, key, indexStr) {
   if (!texts.length) return;
 
   texts.forEach(t => { t.textContent = `[${indexStr}]`; t.setAttribute('font-size','14'); t.setAttribute('text-anchor', 'middle'); t.setAttribute('x', (w/2).toString());});
-}
-
-function pickTextElementForKey(anchorEl, key) {
-  const texts = anchorEl.querySelectorAll('text');
-  if (!texts.length) return null;
-
-  const bb = anchorEl.getBBox();
-  const targetY =
-    key === 'metric' ? (bb.y + bb.height * 0.63) : (bb.y + bb.height - 6);
-
-  let best = null;
-  let bestScore = Infinity;
-
-  texts.forEach(t => {
-    try {
-      const tb = t.getBBox();
-      const dx = Math.abs((tb.x + tb.width/2) - (bb.x + bb.width/2));
-      const dy = Math.abs((tb.y + tb.height) - targetY);
-      const score = dy * 1.0 + dx * 0.15; 
-      if (score < bestScore) {
-        bestScore = score;
-        best = t;
-      }
-    } catch(_) {}
-  });
-
-  return best;
 }
 
 function svgToPngDataUrl(svgEl, maxW = null, maxH = null, mode = 'auto', renderScale = 1) {
@@ -802,45 +670,6 @@ function svgToPngDataUrl(svgEl, maxW = null, maxH = null, mode = 'auto', renderS
       reject(e);
     }
   });
-}
-
-function replaceNodeText(outSvg, anchorEl, key, index) {
-  if (!anchorEl) return;
-  const textEl = pickTextElementForKey(anchorEl, key);
-  if (!textEl) return;
-
-  textEl.textContent = `[${index}]`;
-
-  if (!textEl.getAttribute('font-weight')) textEl.setAttribute('font-weight', '600');
-  if (!textEl.getAttribute('font-size'))   textEl.setAttribute('font-size',  '14');
-}
-
-function findAnchorInClone(nodeId, outSvg) { // by id
-  if (!nodeId || !outSvg) return null;
-  const byData = outSvg.querySelector(`[data-node-id="${CSS.escape(nodeId)}"]`);
-  if (byData) return byData;
-  const byId = outSvg.getElementById(nodeId);
-  if (byId) return byId;
-  return outSvg.querySelector(`g[id*="${CSS.escape(nodeId)}"]`);
-}
-
-function svgToDataUrl(svgEl) {
-  if (!svgEl.getAttribute('xmlns')) {
-    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  }
-  if (!svgEl.getAttribute('xmlns:xlink')) {
-    svgEl.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-  }
-
-  svgEl.removeAttribute('width');
-  svgEl.removeAttribute('height');
-  svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
-              new XMLSerializer().serializeToString(svgEl);
-
-  const svg64 = window.btoa(unescape(encodeURIComponent(xml)));
-  return `data:image/svg+xml;base64,${svg64}`;
 }
 
 function ensurePreviewBox() {
@@ -1158,13 +987,6 @@ function getNodesBBoxWithDynamicPadding() {
 
 const updateClozePreview = (highlightId=null) => rebuildPreviewSvg(highlightId);
 
-function fitPreviewHeightToTable() {
-  const box = document.getElementById('clozePreview');
-  const table = document.querySelector('#clozeModal table');
-  if (!box || !table) return;
-  box.style.height = Math.ceil(table.getBoundingClientRect().height) + 'px';
-}
-
 function buildDataTableSection(lang = getLang()) {
   // local fallbacks si por alguna razón no existe tablesExporter
   const _getTableRoot = (typeof getTableRoot === 'function') ? getTableRoot
@@ -1337,6 +1159,164 @@ function getDynamicTreePngTargetSize() {
     maxW: Math.max(600, maxW),
     maxH: Math.max(450, maxH)
   };
+}
+
+// SVG
+import { getCurrentStep } from "../stepbystep.js";
+
+const SVG_ID = "svgDT";
+
+function ensureOffscreenHost() {
+  let host = document.getElementById("__svgExportHost");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "__svgExportHost";
+    host.style.position = "fixed";
+    host.style.left = "-10000px";
+    host.style.top = "-10000px";
+    host.style.width = "0";
+    host.style.height = "0";
+    host.style.overflow = "hidden";
+    document.body.appendChild(host);
+  }
+  host.innerHTML = "";
+  return host;
+}
+
+function serializeSvg(svgEl) {
+  if (!svgEl.getAttribute("xmlns")) {
+    svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  }
+  if (!svgEl.getAttribute("xmlns:xlink")) {
+    svgEl.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+  }
+  return new XMLSerializer().serializeToString(svgEl);
+}
+
+function inlineTextStyles(svgEl, referenceSvgOnPage) {
+  const ref = referenceSvgOnPage || svgEl;
+  const svgComputed = getComputedStyle(ref);
+  const defaultFamily = svgComputed.fontFamily || "serif";
+
+  const NS = "http://www.w3.org/2000/svg";
+  let defs = svgEl.querySelector("defs");
+  if (!defs) {
+    defs = document.createElementNS(NS, "defs");
+    svgEl.insertBefore(defs, svgEl.firstChild);
+  }
+
+  const style = document.createElementNS(NS, "style");
+  style.textContent = `
+    text, tspan { font-family: ${defaultFamily}; }
+  `;
+  defs.appendChild(style);
+
+  // Refuerza inline (más robusto)
+  svgEl.querySelectorAll("text, tspan").forEach((el) => {
+    const cs = getComputedStyle(el);
+    el.style.fontFamily = cs.fontFamily || defaultFamily;
+    el.style.fontSize = cs.fontSize;
+    el.style.fontWeight = cs.fontWeight;
+    el.style.fontStyle = cs.fontStyle;
+  });
+}
+
+export async function stepTreeSvgToPngDataUrl(svgForExport, options = {}) {
+  const {
+    scale = 2,
+    bottomPad = 12,
+  } = options;
+
+  const referenceSvgOnPage = document.getElementById(SVG_ID);
+  const step = getCurrentStep();
+
+  // 1) Clonar el SVG que queremos exportar (este ya trae los [i] sustituidos si lo llamas con outSvg)
+  const clone = svgForExport.cloneNode(true);
+  clone.removeAttribute("id");
+
+  // 2) Mantener solo g1..gStep (en tu árbol los grupos gN contienen lo visible por step) :contentReference[oaicite:1]{index=1}
+  const groups = Array.from(clone.querySelectorAll("g[id^='g']"));
+  for (const g of groups) {
+    const n = parseInt(g.id.slice(1), 10);
+    if (Number.isFinite(n) && n <= step) {
+      g.style.display = "block";
+    } else {
+      g.remove();
+    }
+  }
+
+  // 3) Montar offscreen para medir bbox real
+  const host = ensureOffscreenHost();
+  host.appendChild(clone);
+
+  // Wrapper para medir bbox del contenido visible (sin defs)
+  const NS = "http://www.w3.org/2000/svg";
+  const wrapper = document.createElementNS(NS, "g");
+  wrapper.setAttribute("id", "__exportContent");
+
+  const children = Array.from(clone.childNodes);
+  for (const child of children) {
+    if (child.nodeType !== 1) continue;
+    const tag = child.tagName.toLowerCase();
+    if (tag === "defs" || tag === "symbol") continue;
+    wrapper.appendChild(child);
+  }
+  clone.appendChild(wrapper);
+
+  const bbox = wrapper.getBBox();
+  const contentBottom = bbox.y + bbox.height;
+
+  // 4) Ajuste SOLO por abajo del viewBox
+  const vbRaw = (clone.getAttribute("viewBox") || "0 0 500 500")
+    .trim()
+    .split(/\s+/)
+    .map(Number);
+
+  const vbX = vbRaw[0];
+  const vbY = vbRaw[1];
+  const vbW = vbRaw[2];
+
+  const newVbH = Math.max(1, (contentBottom - vbY) + bottomPad);
+  clone.setAttribute("viewBox", `${vbX} ${vbY} ${vbW} ${newVbH}`);
+
+  // Mantener escala visual (ancho = vbW)
+  clone.setAttribute("width", `${vbW}`);
+  clone.setAttribute("height", `${newVbH}`);
+
+  // 5) Fix tipografía en export
+  inlineTextStyles(clone, referenceSvgOnPage);
+
+  // 6) SVG -> Image -> Canvas -> dataURL
+  const svgText = serializeSvg(clone);
+  const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  const dataUrl = await new Promise((resolve, reject) => {
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(vbW * scale);
+      canvas.height = Math.ceil(newVbH * scale);
+
+      const ctx = canvas.getContext("2d");
+      // Alineado a la izquierda: pintamos desde x=0
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      try {
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    img.onerror = () => reject(new Error("Error cargando el SVG como imagen."));
+    img.src = svgUrl;
+  });
+
+  URL.revokeObjectURL(svgUrl);
+  host.innerHTML = "";
+
+  return dataUrl;
 }
 
 
@@ -1753,26 +1733,6 @@ function buildClozePreviewHtmlFromText(text) {
   return out.replace(/\n/g, '<br>');
 }
 
-function insertAtCursor(textarea, snippet) {
-  const el = textarea;
-  const value = el.value || '';
-  const selStart = el.selectionStart ?? value.length;
-  const selEnd   = el.selectionEnd ?? selStart;
-
-  const before = value.slice(0, selStart);
-  const after  = value.slice(selEnd);
-
-  el.value = before + snippet + after;
-
-  const pos = selStart + snippet.length;
-  el.focus();
-  try {
-    el.setSelectionRange(pos, pos);
-  } catch (_) {
-    // algunos navegadores pueden no soportarlo, no pasa nada
-  }
-}
-
 function getDatasetRowCount() {
   try {
     const rows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
@@ -1952,9 +1912,8 @@ ${targetsSorted.map(t => {
 
   // ---- legend SVG DOM -> PNG igual que en HTML ----
   const legendSvg = buildTreeLegendSvg_DOM(lang);
-  const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(outSvg, maxW, maxH, 'tree', 2),
+    stepTreeSvgToPngDataUrl(outSvg, { scale: 2, bottomPad: 12, whiteBackground: true }),
     svgToPngDataUrl(legendSvg, 720, 240) // (o 900,260) sin 'tree'
   ]).then(([treePngDataUrl, legendPngDataUrl]) => {
 
@@ -2134,9 +2093,8 @@ ${targetsSorted.map(t => {
   function tfn(key){ return t(key, lang); }
 
   const legendSvg = buildTreeLegendSvg_DOM(lang); 
-  const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(outSvg, maxW, maxH, 'tree', 2),
+    stepTreeSvgToPngDataUrl(outSvg, { scale: 2, bottomPad: 12, whiteBackground: true }),
     svgToPngDataUrl(legendSvg, 720, 240) // (o 900,260) sin 'tree'
   ]).then(([treePngDataUrl, legendPngDataUrl]) => {
 
@@ -2466,7 +2424,7 @@ function exportTheoryQuestionsXmlFromModel() {
 
   const { maxW, maxH } = getDynamicTreePngTargetSize();
   Promise.all([
-    svgToPngDataUrl(treeClone, maxW, maxH, 'tree'),
+    stepTreeSvgToPngDataUrl(outSvg, { scale: 2, bottomPad: 12, whiteBackground: true }),
     legendPromise
   ]).then(([treePngUrl, legendPngUrl]) => {
     const treeFileName   = `tree_step${stepLabel}.png`;
@@ -2617,8 +2575,6 @@ function openTheoryModal() {
   const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
   bsModal.show();
 }
-
-
 
 
 

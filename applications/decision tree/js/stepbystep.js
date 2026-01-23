@@ -240,5 +240,11 @@ function goToStep() {
     createRedMarker(document.getElementById('g' + currentStep).querySelectorAll('use'));
 }
 
-export { initialStep, stepForward, stepBack, lastStep, goToStep };
+
+// Getter function for the current step
+function getCurrentStep() {
+  return currentStep;
+}
+
+export { initialStep, stepForward, stepBack, lastStep, goToStep, getCurrentStep };
 export default initialStep;
